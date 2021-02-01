@@ -46,4 +46,6 @@ require("./config/passport")(passport);
 app.use("/api/users", usersRoutes);
 app.use("/api/games", gamesRoutes);
 
+app.get('/', (req, res) => { res.send('Hello from Express!')}); 
+
 app.listen(port, () => console.log(`Server up and running on port ${port}!`));
