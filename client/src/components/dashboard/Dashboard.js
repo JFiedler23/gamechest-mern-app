@@ -39,7 +39,7 @@ function Dashboard(props) {
         if(gameChoices.length === 0){
             //searching for game
             axios
-            .post('http://localhost:5000/api/games/searchGames', {searchTerm: event.target.title.value})
+            .post('https://frozen-taiga-76467.herokuapp.com/api/games/searchGames', {searchTerm: event.target.title.value})
             .then(res => {
                 setModalResults({
                     newResults: true,
@@ -70,7 +70,7 @@ function Dashboard(props) {
             });
 
             axios
-            .post('http://localhost:5000/api/games/add', data)
+            .post('https://frozen-taiga-76467.herokuapp.com/api/games/add', data)
             .then(res => {
                 setNewGameAdded(true);
                 getGames(userData).then(res => {
@@ -88,7 +88,7 @@ function Dashboard(props) {
     //handles game reference deletion event
     const onDeleteClick = (cardProps) => {
         axios
-        .post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id})
+        .post("https://frozen-taiga-76467.herokuapp.com/api/games/delete", {userId: user.id, gameId: cardProps.id})
         .then(res => {
             getGames(userData).then(res => {}).catch(err => {console.log(err)});
         })
@@ -99,7 +99,7 @@ function Dashboard(props) {
     
     //gets all games for the current user
     const getGames = async (userData) => {
-        const { data } = await axios.post('http://localhost:5000/api/games/getGames', userData)
+        const { data } = await axios.post('https://frozen-taiga-76467.herokuapp.com/api/games/getGames', userData)
         setGameTotal(data.games.length);
         setGames(data.games);
     };
