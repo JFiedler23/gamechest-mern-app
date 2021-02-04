@@ -62,10 +62,9 @@ function Register(props) {
                         <p className="grey-text text-darken-1">
                             Already have an account? <Link to="/login">Log in</Link>
                         </p>
-                        <p className="grey-text text-darken-1">
-                            This is just a practice application. Do not register any sensitive info.
-                            A fake name and email is fine.
-                        </p>
+                        <h5 className="grey-text text-darken-1">
+                            Disclaimer: This application is a work in progress and is being used as a learning experience.
+                        </h5>
                     </div>
                     <form noValidate onSubmit={onSubmit}>
                         <div className="input-field col s12">
