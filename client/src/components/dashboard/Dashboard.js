@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { logoutUser } from "../../actions/authActions";
 import axios from 'axios';
 import Card from './Card';
 import Navbar from '../layout/Navbar';
+import MainContext from "../../context/MainContext";
 
 function Dashboard(props) {
     const [gameTotal, setGameTotal] = useState(0);
     const [games, setGames] = useState([]);
     const [modalResults, setModalResults] = useState({});
-    const [newGameAdded, setNewGameAdded] = useState(false);
+    const { toggleNewGameAdded, toggleGameInDb } = useContext(MainContext);
 
     const onLogoutClick = e => {
         e.preventDefault();
@@ -39,7 +40,7 @@ function Dashboard(props) {
         if(gameChoices.length === 0){
             //searching for game
             axios
-            .post('https://pure-brushlands-91141.herokuapp.com/api/games/searchGames', {searchTerm: event.target.title.value})
+            .post('http://localhost:5000/api/games/searchGames', {searchTerm: event.target.title.value})
             .then(res => {
                 setModalResults({
                     newResults: true,
@@ -70,14 +71,23 @@ function Dashboard(props) {
             });
 
             axios
-            .post('https://pure-brushlands-91141.herokuapp.com/api/games/add', data)
+            .post('http://localhost:5000/api/games/add', data)
             .then(res => {
-                setNewGameAdded(true);
-                getGames(userData).then(res => {
+                //if game is not already in users collection. Add it to their collection
+                if(res.data.success){
+                    toggleNewGameAdded(true);
+                    getGames(userData).then(res => {
+                        setTimeout(() => {
+                            toggleNewGameAdded(false);
+                        }, 5000);
+                    }).catch(err => console.log(err));
+                }
+                else{
+                    toggleGameInDb(true);
                     setTimeout(() => {
-                        setNewGameAdded(false);
-                    }, 5000)
-                }).catch(err => console.log(err));
+                        toggleGameInDb(false);
+                    }, 5000);
+                }
             })
             .catch(err => {
                 console.log(err);
@@ -88,7 +98,7 @@ function Dashboard(props) {
     //handles game reference deletion event
     const onDeleteClick = (cardProps) => {
         axios
-        .post("https://pure-brushlands-91141.herokuapp.com/api/games/delete", {userId: user.id, gameId: cardProps.id})
+        .post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id})
         .then(res => {
             getGames(userData).then(res => {}).catch(err => {console.log(err)});
         })
@@ -99,7 +109,7 @@ function Dashboard(props) {
     
     //gets all games for the current user
     const getGames = async (userData) => {
-        const { data } = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', userData)
+        const { data } = await axios.post('http://localhost:5000/api/games/getGames', userData)
         setGameTotal(data.games.length);
         setGames(data.games);
     };
@@ -121,7 +131,7 @@ function Dashboard(props) {
         <div className="container">
             <div className="row">
                 <div className="col s12">
-                    <Navbar modalResults={modalResults} onModalSubmit={onModalSubmit} newGameAdded={newGameAdded} logoutClick={onLogoutClick}/>
+                    <Navbar modalResults={modalResults} onModalSubmit={onModalSubmit} logoutClick={onLogoutClick}/>
                 </div>
                 <div className="col s12 center-align">
                     <h3>Welcome back, {user.name}</h3>

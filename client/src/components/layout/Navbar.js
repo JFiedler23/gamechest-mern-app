@@ -30,7 +30,7 @@ function Navbar(props) {
                 <a href="#" className="hide-on-med-and-up">GameChest</a>
                 <ul id="nav-mobile" className="right">
                     <li>
-                        <AddModal modalResults={props.modalResults} onSubmit={props.onModalSubmit} newGameAdded={props.newGameAdded} closeModal={props.closeModal} />
+                        <AddModal modalResults={props.modalResults} onSubmit={props.onModalSubmit} closeModal={props.closeModal} />
                     </li>
                     <li><a href="#" onClick={props.logoutClick}><i className="material-icons">exit_to_app</i></a></li>
                 </ul>

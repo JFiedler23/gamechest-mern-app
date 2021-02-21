@@ -68,17 +68,31 @@ router.post("/add", async (req, res) =>{
     }
 
     for(let i in body.games){
-        let game = await Game.findOne({_id: body.games[i]._id});
+        const game = await Game.findOne({_id: body.games[i]._id});
+        
+        if(game){
+            const usersFound = await User.find({games: game._id});
+            const foundGame = usersFound.find(user => user._id == body.userId);
 
-        if(game){ 
-            updateUser(body.userId, game._id);
+            //game was found do not add
+            if(foundGame){
+                console.log("Do not add game!");
+
+                return res.status(200).json({
+                    success: false,
+                    message: "Game already in your collection!"
+                });
+            }
+            else{
+                updateUser(body.userId, game._id);
+            
+                return res.status(200).json({
+                    success: true,
+                    message: "Game(s) added"
+                });
+            } 
         }
     }
-
-    return res.status(200).json({
-        success: true,
-        message: "Game(s) added"
-    });
 });
 
 // @route DELETE api/games/delete
