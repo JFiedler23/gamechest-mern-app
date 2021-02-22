@@ -156,7 +156,7 @@ router.post('/getGames', (req, res) => {
             });
         }
         //getting games list for user
-        let gameIDs = user.games;
+        let gameIDs = user.games.slice(0, body.numGames);
     
         const getAllGames = async (ids) => {
             let games = [];
@@ -173,7 +173,8 @@ router.post('/getGames', (req, res) => {
         getAllGames(gameIDs).then(gamesList => {
             return res.status(200).json({
                 success: true,
-                games: gamesList
+                games: gamesList,
+                gameTotal: user.games.length
             });
         })
         .catch(err => {

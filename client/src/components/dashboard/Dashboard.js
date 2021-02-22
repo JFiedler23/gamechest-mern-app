@@ -1,25 +1,36 @@
-import { useState, useEffect, useContext } from "react";
+//react
+import { useState, useEffect, useContext, useRef } from "react";
 import PropTypes from "prop-types";
+
+//other libs
 import { connect } from "react-redux";
 import { logoutUser } from "../../actions/authActions";
 import axios from 'axios';
+
+//context
+import MainContext from "../../context/MainContext";
+
+//components
 import Card from './Card';
 import Navbar from '../layout/Navbar';
-import MainContext from "../../context/MainContext";
+
 
 function Dashboard(props) {
     const [gameTotal, setGameTotal] = useState(0);
     const [games, setGames] = useState([]);
     const [modalResults, setModalResults] = useState({});
     const { toggleNewGameAdded, toggleGameInDb } = useContext(MainContext);
+    const [page, setPage] = useState(1);
+    const [scrollIndex, setScrollIndex] = useState(8);
+    const loader = useRef(null);
+
+    const { user } = props.auth;
+    const userData = {userId: user.id};
 
     const onLogoutClick = e => {
         e.preventDefault();
         props.logoutUser();
     };
-
-    const { user } = props.auth;
-    const userData = {userId: user.id};
 
     //handles game search modal submit events
     const onModalSubmit = (event) => {
@@ -110,22 +121,49 @@ function Dashboard(props) {
     //gets all games for the current user
     const getGames = async (userData) => {
         const { data } = await axios.post('http://localhost:5000/api/games/getGames', userData)
-        setGameTotal(data.games.length);
+        setGameTotal(data.gameTotal);
         setGames(data.games);
     };
 
     //runs once when the component mounts
     useEffect(() => {
-        getGames(userData);
-    }, [])
+        getGames({userId: user.id, numGames: scrollIndex});
+    }, []);
 
-    
+    useEffect(() => {
+        var options = {
+           root: null,
+           rootMargin: "20px",
+           threshold: 1.0
+        };
+       // initialize IntersectionObserver
+       // and attaching to Load More div
+        const observer = new IntersectionObserver(handleObserver, options);
+        if (loader.current) {
+           observer.observe(loader.current)
+        }
+   }, []);
+
     //Creating games list using Card component
     const GameItems = games.map((game) => {
         return(<Card key={game._id} id={game._id} title={game.title} image={game.image} releaseDate={game.releaseDate} platform={game.platform} onDelete={onDeleteClick} />);
     });
 
-    //<SideNav modalResults={modalResults} onModalSubmit={onModalSubmit} logoutClick={onLogoutClick}/>
+
+    useEffect(() => {
+        setScrollIndex((scrollIndex) => scrollIndex + 8);
+        getGames({userId: user.id, numGames: scrollIndex});
+    }, [page]);
+
+    // here we handle what happens when user scrolls to Load More div
+   // in this case we just update page variable
+    const handleObserver = (entities) => {
+        const target = entities[0];
+        
+        if (target.isIntersecting) {   
+            setPage((page) => page + 1);
+        }
+    }
 
     return (
         <div className="container">
@@ -138,6 +176,9 @@ function Dashboard(props) {
                     <h5>Your current game total is: {gameTotal}</h5>
                 </div>
                 {GameItems}
+            </div>
+            <div className="col s12 center-align" ref={loader}>
+                {games.length !== gameTotal ? <h4>Loading...</h4> : <></>}   
             </div>
         </div>
     );
