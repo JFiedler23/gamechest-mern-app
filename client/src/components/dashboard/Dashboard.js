@@ -120,7 +120,7 @@ function Dashboard(props) {
 
     //gets all games for the current user
     const getGames = async (userData) => {
-        const { data } = await axios.post('http://localhost:5000/api/games/getGames', userData)
+        const { data } = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', userData)
         setGameTotal(data.gameTotal);
         setGames(data.games);
     };
