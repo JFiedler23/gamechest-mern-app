@@ -59,6 +59,7 @@ router.post('/searchGames', async (req, res) => {
 // @access Public
 router.post("/add", async (req, res) =>{
     const body = req.body;
+    let isGameAdded = false;
 
     if(!body){
         return res.status(400).json({
@@ -77,21 +78,26 @@ router.post("/add", async (req, res) =>{
             //game was found do not add
             if(foundGame){
                 console.log("Do not add game!");
-
-                return res.status(200).json({
-                    success: false,
-                    message: "Game already in your collection!"
-                });
+                console.log(game);
             }
             else{
                 updateUser(body.userId, game._id);
-            
-                return res.status(200).json({
-                    success: true,
-                    message: "Game(s) added"
-                });
+                isGameAdded = true;
             } 
         }
+    }
+
+    if(isGameAdded){
+        return res.status(200).json({
+            success: true,
+            message: "Game(s) added"
+        });
+    }
+    else{
+        return res.status(200).json({
+            success: false,
+            message: "Game(s) already in your collection!"
+        });
     }
 });
 
