@@ -146,7 +146,7 @@ function Dashboard(props) {
 
     //Creating games list using Card component
     const GameItems = games.map((game) => {
-        return(<Card key={game._id} id={game._id} title={game.title} image={game.image} releaseDate={game.releaseDate} platform={game.platform} onDelete={onDeleteClick} />);
+        return(<Card key={game._id} id={game._id} title={game.title} image={game.image} releaseDate={game.releaseDate} developers={game.developers} platform={game.platform} onDelete={onDeleteClick} />);
     });
 
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const Game = require('../../models/Games');
+const NewGame = require('../../models/NewGames');
 const User = require('../../models/Users');
 const { setRandomFallback } = require('bcryptjs');
 const router = express.Router();
@@ -28,7 +28,7 @@ const updateUser = (id, gameId) => {
 }
 
 const searchGames = async (searchTerm) => {
-    let allGames = await Game.find({ title: { "$regex": searchTerm, "$options": "i" } });
+    let allGames = await NewGame.find({ title: { "$regex": searchTerm, "$options": "i" } });
 
     return allGames;
 }
@@ -69,7 +69,7 @@ router.post("/add", async (req, res) =>{
     }
 
     for(let i in body.games){
-        const game = await Game.findOne({_id: body.games[i]._id});
+        const game = await NewGame.findOne({_id: body.games[i]._id});
         
         if(game){
             const usersFound = await User.find({games: game._id});
@@ -162,7 +162,7 @@ router.post('/getGames', (req, res) => {
             let games = [];
 
             for(let i in ids){
-                let game = await Game.findById(ids[i]);
+                let game = await NewGame.findById(ids[i]);
                 games.push(game);
             }
 
