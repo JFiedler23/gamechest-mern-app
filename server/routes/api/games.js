@@ -1,8 +1,9 @@
 const express = require('express');
 const NewGame = require('../../models/NewGames');
 const User = require('../../models/Users');
-const { setRandomFallback } = require('bcryptjs');
 const router = express.Router();
+
+var gamesState = [];
 
 //helper function used to update the user for add route
 const updateUser = (id, gameId) => {
@@ -31,6 +32,17 @@ const searchGames = async (searchTerm) => {
     let allGames = await NewGame.find({ title: { "$regex": searchTerm, "$options": "i" } });
 
     return allGames;
+}
+
+const getAllGames = async (ids) => {
+    let games = [];
+
+    for(let i in ids){
+        let game = await NewGame.findById(ids[i]);
+        games.push(game);
+    }
+
+    return games;
 }
 
 // @route POST api/games/searchGames
@@ -158,23 +170,13 @@ router.post('/getGames', (req, res) => {
         //getting games list for user
         let gameIDs = user.games.slice(0, body.numGames);
     
-        const getAllGames = async (ids) => {
-            let games = [];
-
-            for(let i in ids){
-                let game = await NewGame.findById(ids[i]);
-                games.push(game);
-            }
-
-            return games;
-        }
-        
         //getting all games from DB
         getAllGames(gameIDs).then(gamesList => {
             return res.status(200).json({
                 success: true,
                 games: gamesList,
-                gameTotal: user.games.length
+                gameTotal: user.games.length,
+                maxScroll: user.games.length === gamesList.length ? true : false
             });
         })
         .catch(err => {
@@ -185,5 +187,54 @@ router.post('/getGames', (req, res) => {
         });
     });
 });
+
+// @route POST api/games/getGames
+// @desc Gets all games for a user
+// @access Public
+router.post('/sortGames', (req, res) => {
+    const body = req.body;
+
+    if(!body || !body.userId || !body.sortType){
+        return res.status(400).json({
+            success: false,
+            message: "Incorrect request body"
+        });
+    }
+
+    User.findById(body.userId, async (err, user) => {
+        if(err){
+            return res.status(400).json({
+                success: false,
+                error: err
+            });
+        }
+
+        let games = await getAllGames(user.games);
+        let sortedGames = [];
+        
+        //sorting games based on sort type
+        switch (body.sortType) {
+            case "sort_title":
+                sortedGames = games.sort((a, b) => a.title > b.title ? 1 : -1);
+                break;
+            case "sort_date_asc":
+                sortedGames = games.sort((a, b) => a.releaseDate > b.releaseDate ? 1 : -1);
+                break;
+            case "sort_date_desc":
+                sortedGames = games.sort((a, b) => a.releaseDate > b.releaseDate ? -1 : 1);
+                break;
+            default:
+                break;
+        }
+        sortedGames = sortedGames.slice(0, body.numGames);
+
+        return res.status(200).json({
+            success: true,
+            games: sortedGames,
+            gameTotal: user.games.length,
+            maxScroll: user.games.length === sortedGames.length ? true : false
+        });
+    })
+})
 
 module.exports = router;

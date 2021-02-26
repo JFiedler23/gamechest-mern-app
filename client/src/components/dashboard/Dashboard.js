@@ -23,6 +23,8 @@ function Dashboard(props) {
     const [page, setPage] = useState(1);
     const [scrollIndex, setScrollIndex] = useState(8);
     const loader = useRef(null);
+    const [sorted, setSorted] = useState("default");
+    const [maxScroll, setMaxScroll] = useState(false);
 
     const { user } = props.auth;
     const userData = {userId: user.id};
@@ -51,7 +53,7 @@ function Dashboard(props) {
         if(gameChoices.length === 0){
             //searching for game
             axios
-            .post('https://pure-brushlands-91141.herokuapp.com/api/games/searchGames', {searchTerm: event.target.title.value})
+            .post('http://localhost:5000/api/games/searchGames', {searchTerm: event.target.title.value})
             .then(res => {
                 setModalResults({
                     newResults: true,
@@ -82,12 +84,15 @@ function Dashboard(props) {
             });
 
             axios
-            .post('https://pure-brushlands-91141.herokuapp.com/api/games/add', data)
+            .post('http://localhost:5000/api/games/add', data)
             .then(res => {
+                console.log(games);
+                data = {userId: user.id, sortType: sorted, numGames: scrollIndex}
+                console.log(data);
                 //if game is not already in users collection. Add it to their collection
                 if(res.data.success){
                     toggleNewGameAdded(true);
-                    getGames(userData).then(res => {
+                    getGames(data).then(res => {
                         setTimeout(() => {
                             toggleNewGameAdded(false);
                         }, 5000);
@@ -109,9 +114,9 @@ function Dashboard(props) {
     //handles game reference deletion event
     const onDeleteClick = (cardProps) => {
         axios
-        .post("https://pure-brushlands-91141.herokuapp.com/api/games/delete", {userId: user.id, gameId: cardProps.id})
+        .post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id})
         .then(res => {
-            getGames(userData).then(res => {}).catch(err => {console.log(err)});
+            getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted}).then(res => {}).catch(err => {console.log(err)});
         })
         .catch(err => {
             console.log(err);
@@ -120,16 +125,26 @@ function Dashboard(props) {
 
     //gets all games for the current user
     const getGames = async (userData) => {
-        const { data } = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', userData)
-        setGameTotal(data.gameTotal);
-        setGames(data.games);
+        let res;
+        if(sorted === "default"){
+            res = await axios.post('http://localhost:5000/api/games/getGames', userData)
+            setMaxScroll(res.data.maxScroll);
+        }
+        else{
+            res = await axios.post("http://localhost:5000/api/games/sortGames", userData);
+            setMaxScroll(res.data.maxScroll);
+        }
+        
+        setGameTotal(res.data.gameTotal);
+        setGames(res.data.games);
     };
 
     //runs once when the component mounts
     useEffect(() => {
-        getGames({userId: user.id, numGames: scrollIndex});
+        getGames({userId: user.id, numGames: scrollIndex, sortType: sorted});
     }, []);
 
+    //sets up intersection observer for infinite scroll
     useEffect(() => {
         var options = {
            root: null,
@@ -149,10 +164,12 @@ function Dashboard(props) {
         return(<Card key={game._id} id={game._id} title={game.title} image={game.image} releaseDate={game.releaseDate} developers={game.developers} platform={game.platform} onDelete={onDeleteClick} />);
     });
 
-
+    //manages infinite scroll
     useEffect(() => {
-        setScrollIndex((scrollIndex) => scrollIndex + 8);
-        getGames({userId: user.id, numGames: scrollIndex});
+        if(!maxScroll){
+            setScrollIndex((scrollIndex) => scrollIndex + 8);
+            getGames({userId: user.id, numGames: scrollIndex, sortType: sorted});
+        }
     }, [page]);
 
     // here we handle what happens when user scrolls to Load More div
@@ -165,11 +182,24 @@ function Dashboard(props) {
         }
     }
 
+    const onSortClick = async (event) => {
+        var sortType = event.currentTarget.id;
+        setScrollIndex(16);
+
+        let { data } = await axios.post("http://localhost:5000/api/games/sortGames", {userId: user.id, sortType: sortType, numGames: 8});
+        
+        if(data.success){
+            setSorted(sortType);
+            setGames(data.games);
+            setMaxScroll(data.maxScroll);
+        }
+    }
+
     return (
         <div className="container">
             <div className="row">
                 <div className="col s12">
-                    <Navbar modalResults={modalResults} onModalSubmit={onModalSubmit} logoutClick={onLogoutClick}/>
+                    <Navbar modalResults={modalResults} onModalSubmit={onModalSubmit} logoutClick={onLogoutClick} onSortClick={onSortClick} />
                 </div>
                 <div className="col s12 center-align">
                     <h3>Welcome back, {user.name}</h3>

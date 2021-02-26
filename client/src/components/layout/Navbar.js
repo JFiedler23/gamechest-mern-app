@@ -1,5 +1,6 @@
 import React from 'react';
 import AddModal from '../add-modal/AddModal';
+import SortMenu from '../sort_filter/SortMenu';
 
 function Navbar(props) {
     /* ADD ME BACK LATER
@@ -31,6 +32,9 @@ function Navbar(props) {
                 <ul id="nav-mobile" className="right">
                     <li>
                         <AddModal modalResults={props.modalResults} onSubmit={props.onModalSubmit} closeModal={props.closeModal} />
+                    </li>
+                    <li>
+                        <SortMenu onSortClick={props.onSortClick}></SortMenu>
                     </li>
                     <li><a href="#" onClick={props.logoutClick}><i className="material-icons">exit_to_app</i></a></li>
                 </ul>

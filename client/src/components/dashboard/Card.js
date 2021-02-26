@@ -12,7 +12,7 @@ function Card(props) {
                     <span className="card-title">{props.title}</span>
                     <p>Release date: {props.releaseDate}</p>
                     <p>Platform: {props.platform}</p>
-                    <p>Developers: {props.developers.toString()}</p>
+                    <p>Developers: {props.developers ? props.developers.toString() : "N/A"}</p>
                     <button onClick={(e) => {props.onDelete(props)}} className="btn-floating halfway-fab waves-effect waves-light red hoverable"><i className="material-icons">remove</i></button>
                 </div>
             </div>
