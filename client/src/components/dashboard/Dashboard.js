@@ -53,7 +53,7 @@ function Dashboard(props) {
         if(gameChoices.length === 0){
             //searching for game
             axios
-            .post('http://localhost:5000/api/games/searchGames', {searchTerm: event.target.title.value})
+            .post('https://pure-brushlands-91141.herokuapp.com/api/games/searchGames', {searchTerm: event.target.title.value})
             .then(res => {
                 setModalResults({
                     newResults: true,
@@ -84,7 +84,7 @@ function Dashboard(props) {
             });
 
             axios
-            .post('http://localhost:5000/api/games/add', data)
+            .post('https://pure-brushlands-91141.herokuapp.com/api/games/add', data)
             .then(res => {
                 console.log(games);
                 data = {userId: user.id, sortType: sorted, numGames: scrollIndex}
@@ -114,7 +114,7 @@ function Dashboard(props) {
     //handles game reference deletion event
     const onDeleteClick = (cardProps) => {
         axios
-        .post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id})
+        .post("https://pure-brushlands-91141.herokuapp.com/api/games/delete", {userId: user.id, gameId: cardProps.id})
         .then(res => {
             getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted}).then(res => {}).catch(err => {console.log(err)});
         })
@@ -127,11 +127,11 @@ function Dashboard(props) {
     const getGames = async (userData) => {
         let res;
         if(sorted === "default"){
-            res = await axios.post('http://localhost:5000/api/games/getGames', userData)
+            res = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', userData)
             setMaxScroll(res.data.maxScroll);
         }
         else{
-            res = await axios.post("http://localhost:5000/api/games/sortGames", userData);
+            res = await axios.post("https://pure-brushlands-91141.herokuapp.com/api/games/sortGames", userData);
             setMaxScroll(res.data.maxScroll);
         }
         
@@ -186,7 +186,7 @@ function Dashboard(props) {
         var sortType = event.currentTarget.id;
         setScrollIndex(16);
 
-        let { data } = await axios.post("http://localhost:5000/api/games/sortGames", {userId: user.id, sortType: sortType, numGames: 8});
+        let { data } = await axios.post("https://pure-brushlands-91141.herokuapp.com/api/games/sortGames", {userId: user.id, sortType: sortType, numGames: 8});
         
         if(data.success){
             setSorted(sortType);
