@@ -109,32 +109,36 @@ function Dashboard(props) {
         try{
             //removes game client side while server is deleting game from db
             setGames(newGames => newGames.filter(game => game._id !== cardProps.id));
+            setGameTotal(current_total => current_total - 1);
 
             await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
-            getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted});
+
+            if(sorted === "default"){
+                getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted});
+            }
         }
         catch(error){
             console.log(error);
         }
     };
 
-    //gets all games for the current user
+    //gets games for the current user based on scroll index
     const getGames = async (userData) => {
         let res;
         try{
             if(sorted === "default"){
                 res = await axios.post('http://localhost:5000/api/games/getGames', userData)
                 setMaxScroll(res.data.maxScroll);
+                setGameTotal(res.data.gameTotal);
+                setGames(res.data.games);
             }
-            
-            setGameTotal(res.data.gameTotal);
-            setGames(res.data.games);
         }
         catch(error){
             console.log(error);
         }
     };
 
+    //gets all games for the current user. Used to store games client-side so sorting is faster
     const getAllGames = async() => {
         try{
             let response = await axios.post('http://localhost:5000/api/games/getGames', {userId: user.id, numGames: -1});
@@ -204,6 +208,8 @@ function Dashboard(props) {
                 case "sort_date_desc":
                     sorted_games = allGames.sort((a, b) => a.releaseDate > b.releaseDate ? -1 : 1);
                     break;
+                case "sort_console":
+                    sorted_games = allGames.sort((a, b) => a.platform > b.platform ? -1 : 1);
                 default:
                     break;
             }
@@ -212,21 +218,6 @@ function Dashboard(props) {
             setMaxScroll(true);
             setSorted(sortType);
         }
-        /*
-        setScrollIndex(16);
-        try{
-            let { data } = await axios.post("http://localhost:5000/api/games/sortGames", {userId: user.id, sortType: sortType, numGames: 8});
-        
-            if(data.success){
-                setSorted(sortType);
-                setGames(data.games);
-                setMaxScroll(data.maxScroll);
-            }
-        }
-        catch(error){
-            console.log(error);
-        }
-        */
     }
 
     return (
