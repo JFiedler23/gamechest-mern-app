@@ -167,9 +167,10 @@ router.post('/getGames', (req, res) => {
                 error: err
             });
         }
-        //getting games list for user
-        let gameIDs = user.games.slice(0, body.numGames);
 
+        //getting games list for user
+        let gameIDs = body.numGames > -1 ? user.games.slice(0, body.numGames) : user.games;
+        
         try{
             let gamesList = await getAllGames(gameIDs);
 

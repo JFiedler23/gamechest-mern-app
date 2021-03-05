@@ -18,6 +18,7 @@ import Navbar from '../layout/Navbar';
 function Dashboard(props) {
     const [gameTotal, setGameTotal] = useState(0);
     const [games, setGames] = useState([]);
+    const [allGames, setAllGames] = useState([]);
     const [modalResults, setModalResults] = useState({});
     const { toggleNewGameAdded, toggleGameInDb } = useContext(MainContext);
     const [page, setPage] = useState(1);
@@ -109,7 +110,7 @@ function Dashboard(props) {
             //removes game client side while server is deleting game from db
             setGames(newGames => newGames.filter(game => game._id !== cardProps.id));
 
-            let response = await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
+            await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
             getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted});
         }
         catch(error){
@@ -120,22 +121,38 @@ function Dashboard(props) {
     //gets all games for the current user
     const getGames = async (userData) => {
         let res;
-        if(sorted === "default"){
-            res = await axios.post('http://localhost:5000/api/games/getGames', userData)
-            setMaxScroll(res.data.maxScroll);
+        try{
+            if(sorted === "default"){
+                res = await axios.post('http://localhost:5000/api/games/getGames', userData)
+                setMaxScroll(res.data.maxScroll);
+            }
+            
+            setGameTotal(res.data.gameTotal);
+            setGames(res.data.games);
         }
-        else{
-            res = await axios.post("http://localhost:5000/api/games/sortGames", userData);
-            setMaxScroll(res.data.maxScroll);
+        catch(error){
+            console.log(error);
         }
-        
-        setGameTotal(res.data.gameTotal);
-        setGames(res.data.games);
     };
 
-    //runs once when the component mounts
+    const getAllGames = async() => {
+        try{
+            let response = await axios.post('http://localhost:5000/api/games/getGames', {userId: user.id, numGames: -1});
+            setAllGames(response.data.games);
+        }
+        catch(error){
+            console.log(error);
+        }
+    }
+
+    //gets the first 8 games for the user (speeds up initial page load)
     useEffect(() => {
         getGames({userId: user.id, numGames: scrollIndex, sortType: sorted});
+    }, []);
+
+    //gets the users entire game list (used to speed up sorting)
+    useEffect(() => {
+        getAllGames();
     }, []);
 
     //sets up intersection observer for infinite scroll
@@ -151,7 +168,7 @@ function Dashboard(props) {
         if (loader.current) {
            observer.observe(loader.current)
         }
-   }, []);
+    }, []);
 
     //manages infinite scroll
     useEffect(() => {
@@ -173,6 +190,29 @@ function Dashboard(props) {
 
     const onSortClick = async (event) => {
         let sortType = event.currentTarget.id;
+        let sorted_games;
+
+        if(allGames){
+            //sorting games based on sort type
+            switch (sortType) {
+                case "sort_title":
+                    sorted_games = allGames.sort((a, b) => a.title > b.title ? 1 : -1);
+                    break;
+                case "sort_date_asc":
+                    sorted_games = allGames.sort((a, b) => a.releaseDate > b.releaseDate ? 1 : -1);
+                    break;
+                case "sort_date_desc":
+                    sorted_games = allGames.sort((a, b) => a.releaseDate > b.releaseDate ? -1 : 1);
+                    break;
+                default:
+                    break;
+            }
+
+            setGames(sorted_games);
+            setMaxScroll(true);
+            setSorted(sortType);
+        }
+        /*
         setScrollIndex(16);
         try{
             let { data } = await axios.post("http://localhost:5000/api/games/sortGames", {userId: user.id, sortType: sortType, numGames: 8});
@@ -186,6 +226,7 @@ function Dashboard(props) {
         catch(error){
             console.log(error);
         }
+        */
     }
 
     return (
