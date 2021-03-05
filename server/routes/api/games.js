@@ -160,7 +160,7 @@ router.post('/getGames', (req, res) => {
         });
     }
 
-    User.findById(body.userId, (err, user) => {
+    User.findById(body.userId, async (err, user) => {
         if(!user){
             return res.status(400).json({
                 success: false,
@@ -169,22 +169,23 @@ router.post('/getGames', (req, res) => {
         }
         //getting games list for user
         let gameIDs = user.games.slice(0, body.numGames);
-    
-        //getting all games from DB
-        getAllGames(gameIDs).then(gamesList => {
+
+        try{
+            let gamesList = await getAllGames(gameIDs);
+
             return res.status(200).json({
                 success: true,
                 games: gamesList,
                 gameTotal: user.games.length,
                 maxScroll: user.games.length === gamesList.length ? true : false
             });
-        })
-        .catch(err => {
+        }
+        catch(error){
             return res.status(400).json({
                 success: false,
-                error: err
+                error: error
             });
-        });
+        }
     });
 });
 
