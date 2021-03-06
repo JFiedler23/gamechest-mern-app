@@ -86,6 +86,7 @@ function Dashboard(props) {
                 if(response.data.success){
                     toggleNewGameAdded(true);
                     
+                    //adding new games to ui if all games are present
                     if(allGames){
                         setAllGames([...allGames, ...response.data.games_added]);
                         setGames([...allGames, ...response.data.games_added]);
