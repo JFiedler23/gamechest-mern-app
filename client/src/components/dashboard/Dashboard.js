@@ -52,7 +52,7 @@ function Dashboard(props) {
 
         if(gameChoices.length === 0){
             try{
-                let response = await axios.post('http://localhost:5000/api/games/searchGames', {searchTerm: event.target.title.value});
+                let response = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/searchGames', {searchTerm: event.target.title.value});
 
                 setModalResults({
                     newResults: true,
@@ -81,7 +81,7 @@ function Dashboard(props) {
             });
 
             try{
-                let response = await axios.post('http://localhost:5000/api/games/add', {userId: user.id, games: games});
+                let response = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/add', {userId: user.id, games: games});
 
                 if(response.data.success){
                     toggleNewGameAdded(true);
@@ -125,7 +125,7 @@ function Dashboard(props) {
     //handles game reference deletion event
     const onDeleteClick = async (cardProps) => {
         try{
-            let response = await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
+            let response = await axios.post("https://pure-brushlands-91141.herokuapp.com/api/games/delete", {userId: user.id, gameId: cardProps.id});
 
             if(response){
                 setGames(newGames => newGames.filter(game => game._id !== cardProps.id));
@@ -147,7 +147,7 @@ function Dashboard(props) {
         let res;
         try{
             if(sorted === "default"){
-                res = await axios.post('http://localhost:5000/api/games/getGames', userData)
+                res = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', userData)
                 setMaxScroll(res.data.maxScroll);
                 setGameTotal(res.data.gameTotal);
                 setGames(res.data.games);
@@ -161,7 +161,7 @@ function Dashboard(props) {
     //gets all games for the current user. Used to store games client-side so sorting is faster
     const getAllGames = async() => {
         try{
-            let response = await axios.post('http://localhost:5000/api/games/getGames', {userId: user.id, numGames: -1});
+            let response = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', {userId: user.id, numGames: -1});
             setAllGames(response.data.games);
         }
         catch(error){
