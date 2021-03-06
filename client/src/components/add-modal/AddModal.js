@@ -8,7 +8,7 @@ function AddModal(props){
 
   useEffect(() => {
       let modal = document.querySelectorAll('.modal');
-      let instance = M.Modal.init(modal);
+      M.Modal.init(modal);
   }, []);
 
   return(

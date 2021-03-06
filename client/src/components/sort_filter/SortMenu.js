@@ -4,7 +4,7 @@ import M from 'materialize-css';
 function SortMenu(props) {
   useEffect(() => {
     var elems = document.querySelectorAll('.dropdown-trigger');
-    var instances = M.Dropdown.init(elems);
+    M.Dropdown.init(elems);
   }, []);
 
   const handleClick = (e) => {

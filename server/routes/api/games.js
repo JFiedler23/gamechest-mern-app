@@ -71,6 +71,7 @@ router.post('/searchGames', async (req, res) => {
 // @access Public
 router.post("/add", async (req, res) =>{
     const body = req.body;
+    let games_added = [];
     let isGameAdded = false;
 
     if(!body){
@@ -95,6 +96,7 @@ router.post("/add", async (req, res) =>{
             else{
                 updateUser(body.userId, game._id);
                 isGameAdded = true;
+                games_added.push(game);
             } 
         }
     }
@@ -102,7 +104,8 @@ router.post("/add", async (req, res) =>{
     if(isGameAdded){
         return res.status(200).json({
             success: true,
-            message: "Game(s) added"
+            message: "Game(s) added",
+            games_added: games_added
         });
     }
     else{

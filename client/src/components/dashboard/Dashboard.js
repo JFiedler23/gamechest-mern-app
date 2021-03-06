@@ -85,11 +85,28 @@ function Dashboard(props) {
 
                 if(response.data.success){
                     toggleNewGameAdded(true);
-                    getGames({userId: user.id, sortType: sorted, numGames: scrollIndex}).then(res => {
-                        setTimeout(() => {
-                            toggleNewGameAdded(false);
-                        }, 5000);
-                    }).catch(err => console.log(err));
+                    
+                    if(allGames){
+                        setAllGames([...allGames, ...response.data.games_added]);
+                        setGames([...allGames, ...response.data.games_added]);
+                        setGameTotal(gameTotal => gameTotal + response.data.games_added.length);
+                        sortGames(sorted, [...allGames, ...response.data.games_added]);
+                    }
+                    else{
+                        try{
+                            await getAllGames();
+                            setAllGames([...allGames, ...response.data.games_added]);
+                            setGames([...allGames, ...response.data.games_added]);
+                            setGameTotal(gameTotal => gameTotal + response.data.games_added.length);
+                            sortGames(sorted, [...allGames, ...response.data.games_added]);
+                        }
+                        catch(error){
+                            console.log(error);
+                        }
+                    }
+                    setTimeout(() => {
+                        toggleNewGameAdded(false);
+                    }, 5000);
                 }
                 else{
                     toggleGameInDb(true);
@@ -107,11 +124,13 @@ function Dashboard(props) {
     //handles game reference deletion event
     const onDeleteClick = async (cardProps) => {
         try{
-            //removes game client side while server is deleting game from db
-            setGames(newGames => newGames.filter(game => game._id !== cardProps.id));
-            setGameTotal(current_total => current_total - 1);
+            let response = await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
 
-            await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
+            if(response){
+                setGames(newGames => newGames.filter(game => game._id !== cardProps.id));
+                setAllGames(newGames => newGames.filter(game => game._id !== cardProps.id));
+                setGameTotal(current_total => current_total - 1);
+            }
 
             if(sorted === "default"){
                 getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted});
@@ -192,31 +211,35 @@ function Dashboard(props) {
         }
     }
 
+    const sortGames = (sort_type, games_list) => {
+
+        //sorting games based on sort type
+        switch (sort_type) {
+            case "sort_title":
+                games_list = games_list.sort((a, b) => a.title > b.title ? 1 : -1);
+                break;
+            case "sort_date_asc":
+                games_list = games_list.sort((a, b) => a.releaseDate > b.releaseDate ? 1 : -1);
+                break;
+            case "sort_date_desc":
+                games_list = games_list.sort((a, b) => a.releaseDate > b.releaseDate ? -1 : 1);
+                break;
+            case "sort_console":
+                games_list = games_list.sort((a, b) => a.platform > b.platform ? -1 : 1);
+            default:
+                break;
+        }
+
+        setGames(games_list);
+        setMaxScroll(true);
+        setSorted(sort_type);
+    }
+
     const onSortClick = async (event) => {
         let sortType = event.currentTarget.id;
-        let sorted_games;
 
         if(allGames){
-            //sorting games based on sort type
-            switch (sortType) {
-                case "sort_title":
-                    sorted_games = allGames.sort((a, b) => a.title > b.title ? 1 : -1);
-                    break;
-                case "sort_date_asc":
-                    sorted_games = allGames.sort((a, b) => a.releaseDate > b.releaseDate ? 1 : -1);
-                    break;
-                case "sort_date_desc":
-                    sorted_games = allGames.sort((a, b) => a.releaseDate > b.releaseDate ? -1 : 1);
-                    break;
-                case "sort_console":
-                    sorted_games = allGames.sort((a, b) => a.platform > b.platform ? -1 : 1);
-                default:
-                    break;
-            }
-
-            setGames(sorted_games);
-            setMaxScroll(true);
-            setSorted(sortType);
+            sortGames(sortType, allGames);
         }
     }
 
