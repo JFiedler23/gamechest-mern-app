@@ -9,20 +9,19 @@ const gamesRoutes = require('./routes/api/games');
 const app = express();
 const port = process.env.PORT || 5000;
 
-
 var corsOptions = {
-    origin: 'https://gamechest.netlify.app',
+    origin: 'http://localhost:3000',
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }
 
 //middleware
 app.use(
-    bodyParser.urlencoded({
+    express.urlencoded({
         extended: false
     })
 );
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 //DB config
 const db = require('./config/keys').mongoURI;

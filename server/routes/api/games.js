@@ -71,6 +71,7 @@ router.post('/searchGames', async (req, res) => {
 // @access Public
 router.post("/add", async (req, res) =>{
     const body = req.body;
+    let games_added = [];
     let isGameAdded = false;
 
     if(!body){
@@ -95,6 +96,7 @@ router.post("/add", async (req, res) =>{
             else{
                 updateUser(body.userId, game._id);
                 isGameAdded = true;
+                games_added.push(game);
             } 
         }
     }
@@ -102,7 +104,8 @@ router.post("/add", async (req, res) =>{
     if(isGameAdded){
         return res.status(200).json({
             success: true,
-            message: "Game(s) added"
+            message: "Game(s) added",
+            games_added: games_added
         });
     }
     else{
@@ -160,31 +163,33 @@ router.post('/getGames', (req, res) => {
         });
     }
 
-    User.findById(body.userId, (err, user) => {
+    User.findById(body.userId, async (err, user) => {
         if(!user){
             return res.status(400).json({
                 success: false,
                 error: err
             });
         }
+
         //getting games list for user
-        let gameIDs = user.games.slice(0, body.numGames);
-    
-        //getting all games from DB
-        getAllGames(gameIDs).then(gamesList => {
+        let gameIDs = body.numGames > -1 ? user.games.slice(0, body.numGames) : user.games;
+        
+        try{
+            let gamesList = await getAllGames(gameIDs);
+
             return res.status(200).json({
                 success: true,
                 games: gamesList,
                 gameTotal: user.games.length,
                 maxScroll: user.games.length === gamesList.length ? true : false
             });
-        })
-        .catch(err => {
+        }
+        catch(error){
             return res.status(400).json({
                 success: false,
-                error: err
+                error: error
             });
-        });
+        }
     });
 });
 

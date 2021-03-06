@@ -18,6 +18,7 @@ import Navbar from '../layout/Navbar';
 function Dashboard(props) {
     const [gameTotal, setGameTotal] = useState(0);
     const [games, setGames] = useState([]);
+    const [allGames, setAllGames] = useState([]);
     const [modalResults, setModalResults] = useState({});
     const { toggleNewGameAdded, toggleGameInDb } = useContext(MainContext);
     const [page, setPage] = useState(1);
@@ -27,7 +28,6 @@ function Dashboard(props) {
     const [maxScroll, setMaxScroll] = useState(false);
 
     const { user } = props.auth;
-    const userData = {userId: user.id};
 
     const onLogoutClick = e => {
         e.preventDefault();
@@ -35,7 +35,7 @@ function Dashboard(props) {
     };
 
     //handles game search modal submit events
-    const onModalSubmit = (event) => {
+    const onModalSubmit = async (event) => {
         event.preventDefault(event);
 
         //getting array of checkbox gameChoices from search results
@@ -51,18 +51,17 @@ function Dashboard(props) {
         }
 
         if(gameChoices.length === 0){
-            //searching for game
-            axios
-            .post('https://pure-brushlands-91141.herokuapp.com/api/games/searchGames', {searchTerm: event.target.title.value})
-            .then(res => {
+            try{
+                let response = await axios.post('http://localhost:5000/api/games/searchGames', {searchTerm: event.target.title.value});
+
                 setModalResults({
                     newResults: true,
-                    results: res.data.games
+                    results: response.data.games
                 });
-            })
-            .catch(err => {
-                console.log(err);
-            })
+            }
+            catch(error){
+                console.log(error);
+            }
         }
         else{
             let results = modalResults.results;
@@ -75,28 +74,40 @@ function Dashboard(props) {
                 }
             }
 
-            let data = {userId: user.id, games: games};
-
             //clearing results
             setModalResults({
                 newResults: false,
                 results: []
             });
 
-            axios
-            .post('https://pure-brushlands-91141.herokuapp.com/api/games/add', data)
-            .then(res => {
-                console.log(games);
-                data = {userId: user.id, sortType: sorted, numGames: scrollIndex}
-                console.log(data);
-                //if game is not already in users collection. Add it to their collection
-                if(res.data.success){
+            try{
+                let response = await axios.post('http://localhost:5000/api/games/add', {userId: user.id, games: games});
+
+                if(response.data.success){
                     toggleNewGameAdded(true);
-                    getGames(data).then(res => {
-                        setTimeout(() => {
-                            toggleNewGameAdded(false);
-                        }, 5000);
-                    }).catch(err => console.log(err));
+                    
+                    //adding new games to ui if all games are present
+                    if(allGames){
+                        setAllGames([...allGames, ...response.data.games_added]);
+                        setGames([...allGames, ...response.data.games_added]);
+                        setGameTotal(gameTotal => gameTotal + response.data.games_added.length);
+                        sortGames(sorted, [...allGames, ...response.data.games_added]);
+                    }
+                    else{
+                        try{
+                            await getAllGames();
+                            setAllGames([...allGames, ...response.data.games_added]);
+                            setGames([...allGames, ...response.data.games_added]);
+                            setGameTotal(gameTotal => gameTotal + response.data.games_added.length);
+                            sortGames(sorted, [...allGames, ...response.data.games_added]);
+                        }
+                        catch(error){
+                            console.log(error);
+                        }
+                    }
+                    setTimeout(() => {
+                        toggleNewGameAdded(false);
+                    }, 5000);
                 }
                 else{
                     toggleGameInDb(true);
@@ -104,44 +115,68 @@ function Dashboard(props) {
                         toggleGameInDb(false);
                     }, 5000);
                 }
-            })
-            .catch(err => {
-                console.log(err);
-            });
+            }
+            catch(error){
+                console.log(error);
+            }
         }
     };
 
     //handles game reference deletion event
-    const onDeleteClick = (cardProps) => {
-        axios
-        .post("https://pure-brushlands-91141.herokuapp.com/api/games/delete", {userId: user.id, gameId: cardProps.id})
-        .then(res => {
-            getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted}).then(res => {}).catch(err => {console.log(err)});
-        })
-        .catch(err => {
-            console.log(err);
-        });
+    const onDeleteClick = async (cardProps) => {
+        try{
+            let response = await axios.post("http://localhost:5000/api/games/delete", {userId: user.id, gameId: cardProps.id});
+
+            if(response){
+                setGames(newGames => newGames.filter(game => game._id !== cardProps.id));
+                setAllGames(newGames => newGames.filter(game => game._id !== cardProps.id));
+                setGameTotal(current_total => current_total - 1);
+            }
+
+            if(sorted === "default"){
+                getGames({userId: user.id, numGames: scrollIndex - 1, sortType: sorted});
+            }
+        }
+        catch(error){
+            console.log(error);
+        }
     };
 
-    //gets all games for the current user
+    //gets games for the current user based on scroll index
     const getGames = async (userData) => {
         let res;
-        if(sorted === "default"){
-            res = await axios.post('https://pure-brushlands-91141.herokuapp.com/api/games/getGames', userData)
-            setMaxScroll(res.data.maxScroll);
+        try{
+            if(sorted === "default"){
+                res = await axios.post('http://localhost:5000/api/games/getGames', userData)
+                setMaxScroll(res.data.maxScroll);
+                setGameTotal(res.data.gameTotal);
+                setGames(res.data.games);
+            }
         }
-        else{
-            res = await axios.post("https://pure-brushlands-91141.herokuapp.com/api/games/sortGames", userData);
-            setMaxScroll(res.data.maxScroll);
+        catch(error){
+            console.log(error);
         }
-        
-        setGameTotal(res.data.gameTotal);
-        setGames(res.data.games);
     };
 
-    //runs once when the component mounts
+    //gets all games for the current user. Used to store games client-side so sorting is faster
+    const getAllGames = async() => {
+        try{
+            let response = await axios.post('http://localhost:5000/api/games/getGames', {userId: user.id, numGames: -1});
+            setAllGames(response.data.games);
+        }
+        catch(error){
+            console.log(error);
+        }
+    }
+
+    //gets the first 8 games for the user (speeds up initial page load)
     useEffect(() => {
         getGames({userId: user.id, numGames: scrollIndex, sortType: sorted});
+    }, []);
+
+    //gets the users entire game list (used to speed up sorting)
+    useEffect(() => {
+        getAllGames();
     }, []);
 
     //sets up intersection observer for infinite scroll
@@ -157,12 +192,7 @@ function Dashboard(props) {
         if (loader.current) {
            observer.observe(loader.current)
         }
-   }, []);
-
-    //Creating games list using Card component
-    const GameItems = games.map((game) => {
-        return(<Card key={game._id} id={game._id} title={game.title} image={game.image} releaseDate={game.releaseDate} developers={game.developers} platform={game.platform} onDelete={onDeleteClick} />);
-    });
+    }, []);
 
     //manages infinite scroll
     useEffect(() => {
@@ -182,16 +212,35 @@ function Dashboard(props) {
         }
     }
 
-    const onSortClick = async (event) => {
-        var sortType = event.currentTarget.id;
-        setScrollIndex(16);
+    const sortGames = (sort_type, games_list) => {
 
-        let { data } = await axios.post("https://pure-brushlands-91141.herokuapp.com/api/games/sortGames", {userId: user.id, sortType: sortType, numGames: 8});
-        
-        if(data.success){
-            setSorted(sortType);
-            setGames(data.games);
-            setMaxScroll(data.maxScroll);
+        //sorting games based on sort type
+        switch (sort_type) {
+            case "sort_title":
+                games_list = games_list.sort((a, b) => a.title > b.title ? 1 : -1);
+                break;
+            case "sort_date_asc":
+                games_list = games_list.sort((a, b) => a.releaseDate > b.releaseDate ? 1 : -1);
+                break;
+            case "sort_date_desc":
+                games_list = games_list.sort((a, b) => a.releaseDate > b.releaseDate ? -1 : 1);
+                break;
+            case "sort_console":
+                games_list = games_list.sort((a, b) => a.platform > b.platform ? -1 : 1);
+            default:
+                break;
+        }
+
+        setGames(games_list);
+        setMaxScroll(true);
+        setSorted(sort_type);
+    }
+
+    const onSortClick = async (event) => {
+        let sortType = event.currentTarget.id;
+
+        if(allGames){
+            sortGames(sortType, allGames);
         }
     }
 
@@ -205,7 +254,9 @@ function Dashboard(props) {
                     <h3>Welcome back, {user.name}</h3>
                     <h5>Your current game total is: {gameTotal}</h5>
                 </div>
-                {GameItems}
+                {games.map((game) => {
+                    return(<Card key={game._id} id={game._id} title={game.title} image={game.image} releaseDate={game.releaseDate} developers={game.developers} platform={game.platform} onDelete={onDeleteClick} />);
+                })}
             </div>
             <div className="col s12 center-align" ref={loader}>
                 {games.length !== gameTotal ? <h4>Loading...</h4> : <></>}
