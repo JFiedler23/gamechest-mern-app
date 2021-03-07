@@ -16,12 +16,12 @@ var corsOptions = {
 
 //middleware
 app.use(
-    bodyParser.urlencoded({
+    express.urlencoded({
         extended: false
     })
 );
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 //DB config
 const db = require('./config/keys').mongoURI;
