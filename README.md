@@ -1,5 +1,6 @@
 # Gamechest
  A full-stack MERN app that allows users to digitally store their entire video game collection.
+ You can check it out at https://gamechest.netlify.app.
 ![Gamechest Dashboard](https://github.com/JFiedler23/gamechest-mern-app/blob/main/gamechest-screenshot.png)
 
 ## Disclaimer
